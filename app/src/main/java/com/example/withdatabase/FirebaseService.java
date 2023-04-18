@@ -1,6 +1,6 @@
 package com.example.withdatabase;
 
-import android.util.Log;
+import android.net.Uri;
 import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
@@ -11,22 +11,51 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 
 public class FirebaseService {
-
+    private FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
+    private StorageReference storageReference = firebaseStorage.getReference();
+    private StorageReference imageReference = storageReference.child("images");
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ArrayAdapter adapter;
     public FirebaseService(ArrayAdapter adapter){
         this.adapter = adapter;
+    }
+
+    public void uploadImage(String imageName, Uri imageUri) {
+        StorageReference imageRef = storageReference.child("images/" + imageName);
+
+        // Upload the image using the Uri
+        UploadTask uploadTask = imageRef.putFile(imageUri);
+
+        // Register success and failure listeners
+        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                // Get a URL to the uploaded content
+                imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        System.out.println("Image uploaded successfully: " + uri.toString());
+                    }
+                });
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                // Handle unsuccessful uploads
+                System.out.println("Image upload failed: " + exception.getMessage());
+            }
+        });
     }
 
 
